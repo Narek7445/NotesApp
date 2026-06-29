@@ -85,6 +85,58 @@
     </div>
   </div>
 
+  <!-- MOBILE FILTER PANEL (visible on tablet/mobile) -->
+  <div class="mobile-panel" id="mobilePanel" hidden>
+    <div class="mobile-panel__row">
+      <select id="mobileSortSelect" class="mobile-panel__select" aria-label="Sort notes">
+        <option value="createdDesc">Date Created ↓</option>
+        <option value="createdAsc">Date Created ↑</option>
+        <option value="updatedDesc">Date Updated ↓</option>
+        <option value="updatedAsc">Date Updated ↑</option>
+        <option value="titleAZ">Title A → Z</option>
+        <option value="titleZA">Title Z → A</option>
+        <option value="priority">Priority</option>
+      </select>
+      <select id="mobileFilterCategory" class="mobile-panel__select" aria-label="Filter by category">
+        <option value="">All Categories</option>
+        <option value="Work">Work</option>
+        <option value="Study">Study</option>
+        <option value="Personal">Personal</option>
+        <option value="Finance">Finance</option>
+        <option value="Other">Other</option>
+      </select>
+      <select id="mobileFilterPriority" class="mobile-panel__select" aria-label="Filter by priority">
+        <option value="">All Priorities</option>
+        <option value="Low">Low</option>
+        <option value="Medium">Medium</option>
+        <option value="High">High</option>
+        <option value="Critical">Critical</option>
+      </select>
+      <select id="mobileFilterStatus" class="mobile-panel__select" aria-label="Filter by status">
+        <option value="">All Statuses</option>
+        <option value="Active">Active</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Completed">Completed</option>
+        <option value="Archived">Archived</option>
+      </select>
+    </div>
+    <div class="mobile-panel__row mobile-panel__row--actions">
+      <button class="btn btn--ghost btn--sm" id="mobileImportBtn" aria-label="Import notes">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1v8M4 6l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 10v1a2 2 0 002 2h8a2 2 0 002-2v-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Import
+      </button>
+      <button class="btn btn--ghost btn--sm" id="mobileExportBtn" aria-label="Export notes">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 9V1M4 4l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 10v1a2 2 0 002 2h8a2 2 0 002-2v-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Export
+      </button>
+      <div class="mobile-panel__views">
+        <button class="mobile-view-btn active" data-view="main" aria-label="All Notes">All</button>
+        <button class="mobile-view-btn" data-view="favorites" aria-label="Favorites">★ Fav</button>
+        <button class="mobile-view-btn" data-view="archived" aria-label="Archived">Archive</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MAIN LAYOUT -->
   <div class="layout">
 

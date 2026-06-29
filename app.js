@@ -62,7 +62,18 @@ function lsRemove(key) {
 =================================================== */
 function loadNotes() {
   const raw = lsGet(LS_KEYS.NOTES, []);
-  state.notes = Array.isArray(raw) ? raw.filter(isValidNote) : [];
+  if (!Array.isArray(raw)) { state.notes = []; return; }
+  // Filter only valid notes, skip broken ones silently
+  const valid = [];
+  let skipped = 0;
+  raw.forEach(n => {
+    try {
+      if (isValidNote(n)) valid.push(n);
+      else skipped++;
+    } catch { skipped++; }
+  });
+  state.notes = valid;
+  if (skipped > 0) console.warn(`NoteVault: skipped ${skipped} corrupted note(s) from storage`);
 }
 
 function saveNotes() {
@@ -251,7 +262,11 @@ function renderNotes() {
   // Render cards
   grid.innerHTML = '';
   filtered.forEach(note => {
-    grid.appendChild(buildNoteCard(note));
+    try {
+      grid.appendChild(buildNoteCard(note));
+    } catch (err) {
+      console.error('NoteVault: failed to render note', note?.id, err);
+    }
   });
 }
 
@@ -386,6 +401,12 @@ function buildNoteCard(note) {
       if (removed) showUndoToast(removed);
     });
   });
+
+  // Archived notes: only unarchive allowed — hide delete and edit
+  if (note.status === 'Archived') {
+    deleteBtn.hidden = true;
+    editBtn.hidden = true;
+  }
 
   actions.append(editBtn, archiveBtn, deleteBtn);
 
@@ -663,6 +684,7 @@ function openDetailModal(id) {
   const metaGrid = document.createElement('div');
   metaGrid.className = 'detail-meta-grid';
   [
+    ['Unique ID', `<span class="detail-id">${note.id}</span>`],
     ['Category', note.category],
     ['Priority', note.priority],
     ['Status', note.status],
@@ -847,11 +869,17 @@ function loadPersistedState() {
   state.filters = { category: '', priority: '', status: '', color: '', ...savedFilters };
   state.sort = lsGet(LS_KEYS.SORT, 'createdDesc');
 
-  // Apply to DOM
+  // Apply to desktop sidebar DOM
   el('filterCategory').value = state.filters.category;
   el('filterPriority').value = state.filters.priority;
   el('filterStatus').value = state.filters.status;
   el('sortSelect').value = state.sort;
+
+  // Apply to mobile panel DOM (elements exist in HTML)
+  el('mobileFilterCategory').value = state.filters.category;
+  el('mobileFilterPriority').value = state.filters.priority;
+  el('mobileFilterStatus').value   = state.filters.status;
+  el('mobileSortSelect').value     = state.sort;
 }
 
 /* ===================================================
@@ -859,19 +887,33 @@ function loadPersistedState() {
 =================================================== */
 document.addEventListener('keydown', (e) => {
   const noteModalOpen = !el('noteModalOverlay').hidden;
-  const detailOpen = !el('detailModalOverlay').hidden;
-  const confirmOpen = !el('confirmOverlay').hidden;
-  const anyModalOpen = noteModalOpen || detailOpen || confirmOpen;
+  const detailOpen    = !el('detailModalOverlay').hidden;
+  const confirmOpen   = !el('confirmOverlay').hidden;
+  const anyModalOpen  = noteModalOpen || detailOpen || confirmOpen;
 
+  // Escape always closes the topmost open modal
   if (e.key === 'Escape') {
     if (noteModalOpen) {
       if (!state.editingId) saveDraft();
       closeModal('noteModalOverlay');
-    } else if (detailOpen) closeModal('detailModalOverlay');
-    else if (confirmOpen) closeModal('confirmOverlay');
+    } else if (detailOpen) {
+      closeModal('detailModalOverlay');
+    } else if (confirmOpen) {
+      closeModal('confirmOverlay');
+    }
     return;
   }
 
+  // Ctrl+S — save note (only when note modal is open)
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    if (noteModalOpen) {
+      e.preventDefault();
+      saveNote();
+    }
+    return;
+  }
+
+  // The remaining shortcuts only work when no modal is open
   if (anyModalOpen) return;
 
   if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
@@ -881,16 +923,6 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     el('searchInput').focus();
     el('searchInput').select();
-  } else if ((e.ctrlKey || e.metaKey) && e.key === 's' && noteModalOpen) {
-    e.preventDefault();
-    saveNote();
-  }
-});
-
-document.addEventListener('keydown', (e) => {
-  if (!el('noteModalOverlay').hidden && (e.ctrlKey || e.metaKey) && e.key === 's') {
-    e.preventDefault();
-    saveNote();
   }
 });
 
@@ -1053,6 +1085,74 @@ function initEventListeners() {
   el('importFileInput').addEventListener('change', (e) => {
     importNotes(e.target.files[0]);
     e.target.value = '';
+  });
+
+  // Mobile panel: show/hide based on viewport
+  initMobilePanel();
+  window.addEventListener('resize', syncMobilePanelVisibility);
+}
+
+/* ===================================================
+   MOBILE PANEL
+=================================================== */
+function syncMobilePanelVisibility() {
+  const isMobile = window.innerWidth <= 768;
+  el('mobilePanel').hidden = !isMobile;
+}
+
+function initMobilePanel() {
+  syncMobilePanelVisibility();
+
+  // Sync selects to current state
+  el('mobileSortSelect').value       = state.sort;
+  el('mobileFilterCategory').value   = state.filters.category;
+  el('mobileFilterPriority').value   = state.filters.priority;
+  el('mobileFilterStatus').value     = state.filters.status;
+
+  // Sort
+  el('mobileSortSelect').addEventListener('change', (e) => {
+    state.sort = e.target.value;
+    el('sortSelect').value = state.sort;
+    lsSet(LS_KEYS.SORT, state.sort);
+    renderAll();
+  });
+
+  // Filters
+  el('mobileFilterCategory').addEventListener('change', (e) => {
+    state.filters.category = e.target.value;
+    el('filterCategory').value = e.target.value;
+    persistFilters(); renderAll();
+  });
+  el('mobileFilterPriority').addEventListener('change', (e) => {
+    state.filters.priority = e.target.value;
+    el('filterPriority').value = e.target.value;
+    persistFilters(); renderAll();
+  });
+  el('mobileFilterStatus').addEventListener('change', (e) => {
+    state.filters.status = e.target.value;
+    el('filterStatus').value = e.target.value;
+    persistFilters(); renderAll();
+  });
+
+  // Import / Export
+  el('mobileExportBtn').addEventListener('click', exportNotes);
+  el('mobileImportBtn').addEventListener('click', () => el('importFileInput').click());
+
+  // View buttons
+  document.querySelectorAll('.mobile-view-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mobile-view-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // Mirror desktop sidebar nav
+      document.querySelectorAll('.sidebar__nav-item').forEach(b => {
+        b.classList.toggle('active', b.dataset.view === btn.dataset.view);
+      });
+      state.view = btn.dataset.view;
+      state.selectedIds.clear();
+      const titles = { main: 'All Notes', favorites: 'Favorites', archived: 'Archived Notes' };
+      el('viewTitle').textContent = titles[state.view] || 'Notes';
+      renderAll();
+    });
   });
 }
 

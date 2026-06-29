@@ -971,15 +971,90 @@ body {
 }
 .dark-theme .toast__undo { color: #A5B4FC; }
 
+/* ===== DETAIL ID ===== */
+.detail-id {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-text-3);
+  word-break: break-all;
+}
+
+/* ===== MOBILE FILTER PANEL ===== */
+.mobile-panel {
+  display: none;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 10px 16px;
+  gap: 8px;
+  flex-direction: column;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.mobile-panel__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.mobile-panel__row--actions {
+  border-top: 1px solid var(--color-border);
+  padding-top: 8px;
+}
+
+.mobile-panel__select {
+  flex: 1;
+  min-width: 130px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+.mobile-panel__select:focus { outline: none; border-color: var(--color-primary); }
+
+.mobile-panel__views {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.mobile-view-btn {
+  padding: 4px 10px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-2);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.mobile-view-btn:hover { background: var(--color-surface-2); color: var(--color-text); }
+.mobile-view-btn.active { background: var(--color-primary-light); color: var(--color-primary); border-color: var(--color-primary); }
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1024px) {
   :root { --sidebar-width: 210px; }
   .stat-item { padding: 0 14px; }
 }
 
+/* Tablet: 768px — hide sidebar, show mobile panel, keep Import/Export */
 @media (max-width: 768px) {
   .sidebar { display: none; }
-  .topbar__actions .btn--ghost { display: none; }
+
+  /* Show mobile filter panel */
+  .mobile-panel { display: flex; }
+
+  /* Keep Import/Export visible in topbar on tablet */
+  .topbar__actions .btn--ghost { display: inline-flex; }
+
   .notes-grid { grid-template-columns: 1fr 1fr; }
   .form-row { grid-template-columns: 1fr; }
   .detail-meta-grid { grid-template-columns: 1fr; }
@@ -988,11 +1063,21 @@ body {
   .main { padding: 16px; }
 }
 
+/* Mobile: 480px */
 @media (max-width: 480px) {
   .notes-grid { grid-template-columns: 1fr; }
-  .topbar { padding: 0 12px; gap: 10px; }
+  .topbar { padding: 0 12px; gap: 8px; }
   .topbar__title { display: none; }
+  /* Hide Import/Export from topbar on mobile — they're in mobile panel */
+  .topbar__actions .btn--ghost { display: none; }
   .modal { border-radius: var(--radius-md); }
+
+  .mobile-panel__select { min-width: 100px; font-size: 0.75rem; }
+  .mobile-panel { padding: 8px 12px; }
+
+  .stat-item { padding: 0 8px; }
+  .stat-value { font-size: 1rem; }
+  .stat-label { font-size: 0.7rem; }
 }
 
 /* ===== SCROLLBARS ===== */

@@ -119,14 +119,16 @@ function updateNote(id, data) {
 function deleteNote(id) {
   const idx = state.notes.findIndex(n => n.id === id);
   if (idx === -1) return null;
+  if (state.notes[idx].status === 'Archived') return false;
   const [removed] = state.notes.splice(idx, 1);
   saveNotes();
   return removed;
 }
 
 function deleteNotes(ids) {
-  const removed = state.notes.filter(n => ids.has(n.id));
-  state.notes = state.notes.filter(n => !ids.has(n.id));
+  const removed = state.notes.filter(n => ids.has(n.id) && n.status !== 'Archived');
+  const removedIds = new Set(removed.map(n => n.id));
+  state.notes = state.notes.filter(n => !removedIds.has(n.id));
   saveNotes();
   return removed;
 }
@@ -394,6 +396,10 @@ function buildNoteCard(note) {
   deleteBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true"><path d="M2 3.5h9M5 3.5V2.5h3v1M4 3.5l.5 7h4l.5-7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   deleteBtn.addEventListener('click', (e) => {
     e.stopPropagation();
+    if (note.status === 'Archived') {
+      showToast('Archived notes cannot be deleted. Unarchive it first.');
+      return;
+    }
     confirmDialog('Are you sure you want to delete this note?', () => {
       const removed = deleteNote(note.id);
       state.selectedIds.delete(note.id);
@@ -558,22 +564,24 @@ function renderTagChips() {
 }
 
 function buildColorFilterGrid() {
-  const grid = el('colorFilterGrid');
-  grid.innerHTML = '';
-  NOTE_COLORS.forEach(c => {
-    const dot = document.createElement('button');
-    dot.type = 'button';
-    dot.className = `color-filter-dot${state.filters.color === c.value ? ' selected' : ''}`;
-    dot.style.background = c.value;
-    dot.setAttribute('aria-label', `Filter by ${c.label}`);
-    dot.setAttribute('aria-pressed', String(state.filters.color === c.value));
-    dot.addEventListener('click', () => {
-      state.filters.color = state.filters.color === c.value ? '' : c.value;
-      persistFilters();
-      buildColorFilterGrid();
-      renderAll();
+  [el('colorFilterGrid'), el('mobileColorFilterGrid')].forEach(grid => {
+    if (!grid) return;
+    grid.innerHTML = '';
+    NOTE_COLORS.forEach(c => {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = `color-filter-dot${state.filters.color === c.value ? ' selected' : ''}`;
+      dot.style.background = c.value;
+      dot.setAttribute('aria-label', `Filter by ${c.label}`);
+      dot.setAttribute('aria-pressed', String(state.filters.color === c.value));
+      dot.addEventListener('click', () => {
+        state.filters.color = state.filters.color === c.value ? '' : c.value;
+        persistFilters();
+        buildColorFilterGrid();
+        renderAll();
+      });
+      grid.appendChild(dot);
     });
-    grid.appendChild(dot);
   });
 }
 
@@ -916,7 +924,7 @@ document.addEventListener('keydown', (e) => {
   // The remaining shortcuts only work when no modal is open
   if (anyModalOpen) return;
 
-  if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+  if (e.altKey && e.key.toLowerCase() === 'n') {
     e.preventDefault();
     openCreateModal();
   } else if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
@@ -1071,11 +1079,28 @@ function initEventListeners() {
   // Bulk delete
   el('deleteSelectedBtn').addEventListener('click', () => {
     if (state.selectedIds.size === 0) return;
-    confirmDialog(`Are you sure you want to delete ${state.selectedIds.size} note(s)?`, () => {
+    const selected = state.notes.filter(n => state.selectedIds.has(n.id));
+    const archivedCount = selected.filter(n => n.status === 'Archived').length;
+    const deletableCount = selected.length - archivedCount;
+
+    if (deletableCount === 0) {
+      showToast('Archived notes cannot be deleted. Unarchive them first.');
+      return;
+    }
+
+    const message = archivedCount > 0
+      ? `Are you sure you want to delete ${deletableCount} note(s)? ${archivedCount} archived note(s) will be skipped.`
+      : `Are you sure you want to delete ${deletableCount} note(s)?`;
+
+    confirmDialog(message, () => {
       const removed = deleteNotes(new Set(state.selectedIds));
       state.selectedIds.clear();
       renderAll();
-      showToast(`${removed.length} note(s) deleted`);
+      if (archivedCount > 0) {
+        showToast(`${removed.length} note(s) deleted. Archived notes cannot be deleted.`);
+      } else {
+        showToast(`${removed.length} note(s) deleted`);
+      }
     });
   });
 

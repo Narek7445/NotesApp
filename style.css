@@ -1002,6 +1002,21 @@ body {
   padding-top: 8px;
 }
 
+.mobile-panel__row--color {
+  align-items: center;
+}
+
+.mobile-panel__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-2);
+  white-space: nowrap;
+}
+
+.mobile-panel__row--color .color-filter-grid {
+  flex: 1;
+}
+
 .mobile-panel__select {
   flex: 1;
   min-width: 130px;

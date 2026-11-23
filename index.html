@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CYBERQUEST — Դուրս արի թվային լաբիրինթոսից</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;500;600;700&family=Orbitron:wght@500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="ambient"></div>
+  <div class="grid-overlay"></div>
+
+  <div class="app-shell">
+    <header class="top-bar">
+      <div class="logo-area">
+        <div class="logo-mark">CQ</div>
+        <div class="logo-text">
+          <h1 id="game-title">CYBERQUEST</h1>
+          <p class="subtitle" id="game-subtitle">Դուրս արի թվային լաբիրինթոսից</p>
+        </div>
+      </div>
+      <div class="stats stats-header-mobile">
+        <div class="stat">
+          <span class="stat-label">Միավոր</span>
+          <span class="stat-value" id="score-value-mobile">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Փուլ</span>
+          <span class="stat-value"><span id="current-stage-mobile">1</span>/8</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-layout">
+      <!-- Visual Maze -->
+      <aside class="maze-panel" aria-label="Լաբիրինթոսի քարտեզ">
+        <h2 class="panel-title">Թվային լաբիրինթոս</h2>
+
+        <div class="maze-legend">
+          <span class="leg"><i class="leg-dot current"></i> Ընթացիկ</span>
+          <span class="leg"><i class="leg-dot true-path"></i> Ճիշտ ճանապարհ</span>
+          <span class="leg"><i class="leg-dot false-path"></i> Փակուղի</span>
+          <span class="leg"><i class="leg-dot end"></i> Ելք</span>
+        </div>
+
+        <div class="visual-maze" id="visual-maze" aria-hidden="true">
+          <!-- SVG maze drawn by JS -->
+        </div>
+
+        <div class="maze-map" id="maze-map" role="list"></div>
+
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <p class="progress-text"><span id="progress-percent">0</span>% ավարտված</p>
+      </aside>
+
+      <!-- Game Stage -->
+      <section class="stage-panel" id="stage-panel">
+        <div class="stage-stats-bar" id="stage-stats-bar">
+          <div class="stat" id="score-display">
+            <span class="stat-label">Միավոր</span>
+            <span class="stat-value" id="score-value">0</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-label">Փուլ</span>
+            <span class="stat-value"><span id="current-stage">1</span>/8</span>
+          </div>
+        </div>
+
+        <div class="stage-header">
+          <div class="stage-icon" id="stage-icon">🛡️</div>
+          <div class="stage-meta">
+            <span class="stage-category" id="stage-category">Կատեգորիա</span>
+            <h2 class="stage-title" id="stage-title">Փուլի վերնագիր</h2>
+          </div>
+        </div>
+
+        <div class="question-card" id="question-card">
+          <p class="question-text" id="question-text"></p>
+          <div class="options" id="options" role="listbox" aria-label="Պատասխանների տարբերակներ"></div>
+        </div>
+
+        <div class="feedback" id="feedback" hidden>
+          <div class="feedback-icon" id="feedback-icon"></div>
+          <p class="feedback-text" id="feedback-text"></p>
+          <button type="button" class="btn btn-primary" id="continue-btn">Շարունակել</button>
+        </div>
+
+        <div class="hint-box" id="hint-box" hidden>
+          <span class="hint-label">Հուշում</span>
+          <p id="hint-text"></p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Victory Overlay -->
+  <div class="overlay" id="victory-overlay" hidden>
+    <div class="victory-card">
+      <div class="victory-glow"></div>
+      <div class="victory-icon">🏆</div>
+      <h2 id="victory-title">Շնորհավորում ենք!</h2>
+      <p id="victory-message">Դուք հաջողությամբ դուրս եկաք թվային լաբիրինթոսից։</p>
+      <div class="final-stats">
+        <div class="final-stat">
+          <span class="final-label">Վերջնական միավոր</span>
+          <span class="final-value" id="final-score">0</span>
+        </div>
+        <div class="final-stat">
+          <span class="final-label">Սխալ փորձեր</span>
+          <span class="final-value" id="final-mistakes">0</span>
+        </div>
+      </div>
+      <button type="button" class="btn btn-primary btn-lg" id="restart-btn">Խաղալ կրկին</button>
+    </div>
+  </div>
+
+  <!-- Settings Modal (hidden, opened with Numpad 9) -->
+  <div class="overlay" id="settings-overlay" hidden>
+    <div class="settings-card">
+      <div class="settings-header">
+        <h2>Կարգավորումներ</h2>
+        <button type="button" class="btn-icon" id="close-settings" aria-label="Փակել">✕</button>
+      </div>
+      <div class="settings-body" id="settings-body">
+        <!-- Dynamically filled -->
+      </div>
+      <div class="settings-footer">
+        <button type="button" class="btn btn-secondary" id="reset-settings">Վերականգնել</button>
+        <button type="button" class="btn btn-primary" id="save-settings">Պահպանել</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Reset -->
+  <div class="overlay" id="confirm-overlay" hidden>
+    <div class="confirm-card">
+      <p>Վստա՞հ եք, որ ցանկանում եք վերականգնել բոլոր կարգավորումները։</p>
+      <div class="confirm-actions">
+        <button type="button" class="btn btn-secondary" id="cancel-reset">Չեղարկել</button>
+        <button type="button" class="btn btn-danger" id="confirm-reset">Վերականգնել</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
